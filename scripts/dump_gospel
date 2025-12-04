@@ -1,0 +1,22 @@
+#!/bin/zsh
+
+# 1. All namespaced resource kinds
+NS_KINDS=$(kubectl api-resources --verbs=list --namespaced -o name | tr '\n' ',' | sed 's/,$//')
+
+# 2. All non-namespaced kinds
+CLUSTER_KINDS=$(kubectl api-resources --verbs=list --namespaced=false -o name | tr '\n' ',' | sed 's/,$//')
+
+# 3. Dump namespaced resources
+kubectl get $NS_KINDS -A -o yaml > cluster-namespaced-raw.yaml
+
+# 4. Dump cluster-wide resources
+kubectl get $CLUSTER_KINDS -A -o yaml > cluster-clusterwide-raw.yaml
+
+# 5. (Recommended) clean them with kubectl-neat
+# go install github.com/itaysk/kubectl-neat@latest
+cat cluster-namespaced-raw.yaml | kubectl neat > cluster-namespaced.yaml
+cat cluster-clusterwide-raw.yaml | kubectl neat > cluster-clusterwide.yaml
+
+# 6. One big “Nix-style” file
+cat cluster-clusterwide.yaml cluster-namespaced.yaml > cluster-dump.yaml
+
